@@ -3,7 +3,6 @@ const fs = require('fs');
 const path = require('path');
 const { default: makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion } = require('@whiskeysockets/baileys');
 const pino = require('pino');
-const chalk = require('chalk');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -11,12 +10,12 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve the HTML page
+// Serve HTML page
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// ---------- PAIRING ENDPOINT ----------
+// ---------- PAIRING ----------
 const sessions = {};
 
 app.post('/pair', async (req, res) => {
@@ -64,16 +63,16 @@ app.post('/pair', async (req, res) => {
         let code = await sock.requestPairingCode(cleanNumber);
         code = code?.match(/.{1,4}/g)?.join('-') || code;
         sessions[sessionId].code = code;
-        console.log(chalk.green(`✅ Code for ${cleanNumber}: ${code}`));
+        console.log(`✅ Code for ${cleanNumber}: ${code}`);
       } catch (err) {
-        console.log(chalk.red(`❌ Pairing failed:`, err.message));
+        console.log(`❌ Pairing failed:`, err.message);
         sessions[sessionId].error = err.message;
       }
     }, 3000);
 
     sock.ev.on('connection.update', async (update) => {
       if (update.connection === 'open') {
-        console.log(chalk.green(`✅ Device linked for ${cleanNumber}!`));
+        console.log(`✅ Device linked for ${cleanNumber}!`);
         try {
           const credsData = JSON.parse(fs.readFileSync(path.join(tempDir, 'creds.json')));
           const keysData = {};
@@ -89,10 +88,10 @@ app.post('/pair', async (req, res) => {
 
           sessions[sessionId].sessionData = encoded;
           sessions[sessionId].ready = true;
-          console.log(chalk.green(`✅ Session string ready for ${cleanNumber}`));
+          console.log(`✅ Session string ready for ${cleanNumber}`);
           sock.end();
         } catch (err) {
-          console.log(chalk.red(`❌ Error reading session:`, err.message));
+          console.log(`❌ Error reading session:`, err.message);
         }
       }
     });
@@ -116,7 +115,7 @@ app.post('/pair', async (req, res) => {
   }
 });
 
-// ---------- STATUS ENDPOINT ----------
+// ---------- STATUS ----------
 app.get('/status', (req, res) => {
   const { number } = req.query;
   if (!number) return res.status(400).json({ error: 'Missing number' });
@@ -143,8 +142,8 @@ app.get('/status', (req, res) => {
   return res.json({ status: 'pending' });
 });
 
-// ---------- START SERVER ----------
+// ---------- START ----------
 app.listen(PORT, () => {
-  console.log(chalk.green(`🌐 Server running on port ${PORT}`));
-  console.log(chalk.yellow(`📌 Visit http://localhost:${PORT} to generate session strings`));
+  console.log(`🌐 Server running on port ${PORT}`);
+  console.log(`📌 Visit http://localhost:${PORT} to generate session strings`);
 });
