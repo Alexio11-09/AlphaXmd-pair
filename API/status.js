@@ -1,6 +1,6 @@
-import { kv } from '@vercel/kv';
+const { kv } = require('@vercel/kv');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   const { number } = req.query;
   if (!number) return res.status(400).json({ error: 'Missing number' });
 
@@ -23,4 +23,4 @@ export default async function handler(req, res) {
   }
 
   return res.json({ status: 'pending' });
-}
+};
