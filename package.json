@@ -1,0 +1,14 @@
+{
+  "name": "alpha-session-generator",
+  "version": "1.0.0",
+  "description": "Generate WhatsApp session strings for bot deployment",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vercel dev"
+  },
+  "dependencies": {
+    "@vercel/kv": "^1.0.1",
+    "@whiskeysockets/baileys": "^6.7.0",
+    "pino": "^8.15.0"
+  }
+}
