@@ -56,7 +56,8 @@
       resultDiv.innerHTML = '<div class="loading">⏳ Starting pairing...</div>';
 
       try {
-        const pairRes = await fetch('/api/pair', {
+        // Use new endpoint: /api?action=pair
+        const pairRes = await fetch('/api?action=pair', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ number })
@@ -92,7 +93,8 @@
           const poll = setInterval(async () => {
             attempts++;
             try {
-              const statusRes = await fetch(`/api/status?number=${number}`);
+              // Status endpoint: /api?action=status&number=...
+              const statusRes = await fetch(`/api?action=status&number=${number}`);
               const statusData = await statusRes.json();
 
               if (statusData.session) {
