@@ -1,10 +1,10 @@
-import { kv } from '@vercel/kv';
-import { default as makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion } from '@whiskeysockets/baileys';
-import pino from 'pino';
-import fs from 'fs';
-import path from 'path';
+const { kv } = require('@vercel/kv');
+const { default: makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion } = require('@whiskeysockets/baileys');
+const pino = require('pino');
+const fs = require('fs');
+const path = require('path');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -23,7 +23,6 @@ export default async function handler(req, res) {
     return res.json({ session: existing });
   }
 
-  // Create temp session folder (Vercel allows /tmp)
   const tempDir = `/tmp/${cleanNumber}`;
   if (fs.existsSync(tempDir)) fs.rmSync(tempDir, { recursive: true, force: true });
   fs.mkdirSync(tempDir, { recursive: true });
@@ -44,7 +43,6 @@ export default async function handler(req, res) {
 
   let code = null;
 
-  // Request pairing code after 3 seconds
   setTimeout(async () => {
     try {
       const c = await sock.requestPairingCode(cleanNumber);
@@ -55,11 +53,9 @@ export default async function handler(req, res) {
     }
   }, 3000);
 
-  // Listen for connection open (device linked)
   sock.ev.on('connection.update', async (update) => {
     if (update.connection === 'open') {
       try {
-        // Read session files
         const credsData = JSON.parse(fs.readFileSync(path.join(tempDir, 'creds.json')));
         const keysData = {};
         const keysDir = path.join(tempDir, 'keys');
@@ -71,7 +67,7 @@ export default async function handler(req, res) {
         }
         const sessionPackage = { creds: credsData, keys: keysData };
         const encoded = Buffer.from(JSON.stringify(sessionPackage)).toString('base64');
-        await kv.set(sessionId, encoded, { ex: 86400 }); // 1 day
+        await kv.set(sessionId, encoded, { ex: 86400 });
         await kv.set(`status:${cleanNumber}`, 'ready', { ex: 120 });
         sock.end();
       } catch (err) {
@@ -82,7 +78,6 @@ export default async function handler(req, res) {
 
   sock.ev.on('creds.update', saveCreds);
 
-  // Wait up to 5 seconds for code to be available
   let retries = 0;
   while (!code && retries < 10) {
     await new Promise(r => setTimeout(r, 500));
@@ -94,4 +89,4 @@ export default async function handler(req, res) {
   } else {
     res.json({ status: 'pending' });
   }
-}
+};
